@@ -1,0 +1,3 @@
+/home/zqh/Desktop/c puls puls/build/CMakeFiles/rebuild_cache.dir
+/home/zqh/Desktop/c puls puls/build/CMakeFiles/webserver.dir
+/home/zqh/Desktop/c puls puls/build/CMakeFiles/edit_cache.dir
