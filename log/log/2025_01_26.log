@@ -1,0 +1,10 @@
+2025-01-26 10:08:55.164957 [debug]: debug!
+2025-01-26 10:08:55.165014 [info]: info!
+2025-01-26 10:08:55.165042 [warn]: warn!
+2025-01-26 10:08:55.165095 [error]: error!
+2025-01-26 10:09:39.988348 [info]: =========== Server init ==============
+2025-01-26 10:09:39.988454 [info]: Port:1316, OpenLinger:false
+2025-01-26 10:09:39.988581 [info]: Listen Mode:ET, OpenConn Mode:ET
+2025-01-26 10:09:39.988601 [info]: LogSys level:1
+2025-01-26 10:09:39.988611 [info]: srcDir:/home/zqh/Desktop/c puls puls/log/resources/
+2025-01-26 10:09:39.988620 [info]: SqlConnPool num:12, ThreadPool num:6
