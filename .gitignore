@@ -1,0 +1,5 @@
+.vscode
+./build
+./log/log
+./log/log_test.cpp
+./log/log_test

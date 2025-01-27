@@ -119,6 +119,7 @@ void Log::write(int level, const char* format, ...) {
         fclose(fp_);
         fp_ = fopen(newFile, "a");
         assert(fp_ != nullptr);
+        // std::cout << fp_ << "\n";
     }
 
     {
@@ -140,10 +141,12 @@ void Log::write(int level, const char* format, ...) {
         buff_.Append("\n\0", 2);
 
         if(isAsync_ && deque_ && !deque_->full()) {
-            // std::cout << buff_.RetrieveAllToStr() << "\n";
-            deque_->push_back(buff_.RetrieveAllToStr());
+            std::string str = buff_.RetrieveAllToStr();
+            // std::cout << str << "\n";
+            deque_->push_back(str);
         } else {
             fputs(buff_.Peek(), fp_);
+            // fflush(fp_);
         }
         buff_.RetrieveAll();
     }

@@ -40,7 +40,7 @@ WebServer::WebServer(
     // std::cout << "openLog: " << openLog << "\n";
 
     if(openLog) {
-        Log::Instance()->Init(logLevel, "./log", ".log", logQueSize);
+        Log::Instance()->Init(logLevel, "./logs", ".log", logQueSize);
         if(isClose_) {
             LOG_ERROR("=============== Server Init error! ==================");
         }
@@ -99,6 +99,7 @@ WebServer::~WebServer() {
     isClose_ = true;
     free(srcDir_);
     SqlConnPool::Instance()->ClosePool();
+    // LOG_INFO("free all resoueces success!");s
 }
 
 /*
