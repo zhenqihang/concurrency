@@ -82,14 +82,14 @@ void Buffer::EnsureWriteable(size_t len) {
 
 ssize_t Buffer::ReadFd(int fd, int* SaveErrno) {
     char buff[65535];
-    struct iovec iov[2];
+    struct iovec iov[2];                        // 指定多个缓冲区，一个指向buff_缓冲区，一个指向临时缓冲区
     const size_t writable = WritableBytes();
     iov[0].iov_base = BeginPtr_() + writePos_;
     iov[0].iov_len = writable;
     iov[1].iov_base = buff;
     iov[1].iov_len = sizeof(buff);
 
-    const ssize_t len = readv(fd, iov, 2);
+    const ssize_t len = readv(fd, iov, 2);      // 读取数据fd到两个缓冲区
     if(len < 0) {
         *SaveErrno = errno;
     } else if(static_cast<size_t>(len) <= writable) {
@@ -104,7 +104,7 @@ ssize_t Buffer::ReadFd(int fd, int* SaveErrno) {
 
 ssize_t Buffer::WriteFd(int fd, int* SaveErrno) {
     size_t readSize = ReadableBytes();
-    ssize_t len = write(fd, Peek(), readSize);
+    ssize_t len = write(fd, Peek(), readSize);      // 将数据添加到缓冲区
     if(len < 0) {
         *SaveErrno = errno;
         return len;
