@@ -118,9 +118,10 @@ char* Buffer::BeginPtr_() {
 }
 
 const char* Buffer::BeginPtr_() const {
-    return &*buffer_.begin();
+    return &*buffer_.begin();     // 首先buffer_.begin()获得第一个元素的迭代器，再解引用获得第一个元素，在取这个引用的地址
 }
 
+// 首先判断 len长度是否可写，将缓冲区的原始数据移动到最开端，再添加len长度的数据
 void Buffer::MakeSpace_(size_t len) {
     if(WritableBytes() + PrependableBytes() < len) {
         buffer_.resize(writePos_ + len + 1);

@@ -1,5 +1,8 @@
 .vscode
-./build
 ./log/log
 ./log/log_test.cpp
 ./log/log_test
+./buffer/buffer_gtest.cpp
+./buffer/buffer_test
+./timer/test_timer.cpp
+./timer/test_timer
