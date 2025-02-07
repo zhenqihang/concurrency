@@ -12,6 +12,31 @@
 #include "../buffer/buffer.h"
 
 class Log {
+    Log();
+    void AppendLogLevelTitle_(int level);
+    virtual ~Log();                      // 为确保调用多态时正确调用析构函数
+    void AsyncWrite_();                  // 异步写入文件
+
+    static const int LOG_PATH_LEN = 256;
+    static const int LOG_NAME_LEN = 256;
+    static const int MAX_LINES = 50000;
+
+    const char* path_;                  // 文件路径
+    const char* suffix_;                // 文件后缀名
+
+    int MAX_LINES_;
+    int lineCount_;
+    int toDay_;
+    bool isOpen_;
+    Buffer buff_;
+    int level_;
+    bool isAsync_;                      // 是否异步
+
+    FILE* fp_;                          // 文件描述符
+    std::unique_ptr<BlockDeque<std::string>> deque_;    // 用于存储日志信息的阻塞队列
+    std::unique_ptr<std::thread> writeThread_;          // 异步线程
+    std::mutex mtx_;
+
 public:
     void Init(int level, const char* path = "./log",
                 const char* suffix = ".log",
@@ -27,31 +52,6 @@ public:
     void SetLevel(int level);
     bool IsOpen() { return isOpen_; }
 
-private:
-    Log();
-    void AppendLogLevelTitle_(int level);
-    virtual ~Log();                      // 为确保调用多态时正确调用析构函数
-    void AsyncWrite_();
-
-    static const int LOG_PATH_LEN = 256;
-    static const int LOG_NAME_LEN = 256;
-    static const int MAX_LINES = 50000;
-
-    const char* path_;
-    const char* suffix_;
-
-    int MAX_LINES_;
-    int lineCount_;
-    int toDay_;
-    bool isOpen_;
-    Buffer buff_;
-    int level_;
-    bool isAsync_;
-
-    FILE* fp_;
-    std::unique_ptr<BlockDeque<std::string>> deque_;
-    std::unique_ptr<std::thread> writeThread_;
-    std::mutex mtx_;
 };
 
 #define LOG_BASE(level, format, ...) \

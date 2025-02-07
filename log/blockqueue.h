@@ -6,10 +6,22 @@
 #include <sys/time.h>
 #include <assert.h>
 
+/*
+    提供一个线程安全的阻塞双端队列，用于在多线程环境中进行生产者-消费者模式的数据交换。
+    封装了底层std::deque，并通过互斥锁和条件变量类确保线程安全和同步。
+*/
+
 template <class T>
 class BlockDeque {
+    std::deque<T> deq_;                      // 消息队列，不同于queue，是双端队列
+    size_t capacity_;                        // 队列的大小
+    std::mutex mtx_;                         // 互斥锁
+    bool isClose_;                           // 
+    std::condition_variable condConsumer_;   // 消费者，多线程的条件变量
+    std::condition_variable condProducer_;   // 生产者，多线程的条件变量
+
 public:
-    explicit BlockDeque(size_t MaxCapacity = 1000);
+    explicit BlockDeque(size_t MaxCapacity = 1000);   // 显示构造函数
 
     ~BlockDeque();
 
@@ -24,17 +36,9 @@ public:
 
     void push_back(const T &item);
     void push_front(const T &item);
-    bool pop(T &item);
+    bool pop(T &item);                       // 将数据传给item
     bool pop(T &item, int timeout);
     void flush();
-
-private:
-    std::deque<T> deq_;                      // 消息队列
-    size_t capacity_;                        // 队列的大小
-    std::mutex mtx_;                         // 互斥锁
-    bool isClose_;                           // 
-    std::condition_variable condConsumer_;   // 消费者，多线程的条件变量
-    std::condition_variable condProducer_;   // 生产者，多线程的条件变量
 };
 
 template<class T>
@@ -57,14 +61,16 @@ void BlockDeque<T>::Close()
         deq_.clear();
         isClose_ = true;
     }
-    condProducer_.notify_all();  // 唤醒所有线程
-    condConsumer_.notify_all();  // 唤醒所有线程
+
+    // 唤醒所有线程，通知它们队列已经关闭，不再接受新的元素或提供新的元素
+    condProducer_.notify_all();  
+    condConsumer_.notify_all();
 }
 
 template<class T>
 void BlockDeque<T>::flush()
 {
-    condConsumer_.notify_one();  // 唤醒当前线程
+    condConsumer_.notify_one();  // 唤醒当前线程，主要目的是通知等待的消费者线程有新的数据可用
 }
 
 template<class T>
@@ -111,7 +117,7 @@ void BlockDeque<T>::push_back(const T &item)
         condProducer_.wait(locker);  // 若消息队列已满，阻塞生产者
     }
     deq_.push_back(item);            // 添加 
-    condConsumer_.notify_one();      // 唤醒消费者
+    condConsumer_.notify_one();      // 唤醒消费者，有新的数据
 }
 
 template<class T>
@@ -170,7 +176,7 @@ bool BlockDeque<T>::pop(T &item, int timeout)
         if(isClose_)
             return false;
     }
-    item.deq_.front();
+    item = deq_.front();
     deq_.pop_front();
     condProducer_.notify_one();
     return true;

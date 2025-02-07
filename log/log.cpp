@@ -13,6 +13,7 @@ Log::Log() {
 
 Log::~Log() {
     if(writeThread_ && writeThread_->joinable()) {
+        // 确保正确地关闭和清理资源
         while(!deque_->empty()) {
             deque_->flush();
         }
@@ -44,14 +45,16 @@ void Log::Init(int level = 1, const char* path,
                 const char* suffix, int maxQueueSize) {
     isOpen_ = true;
     level_ = level;
+    // 判断是否异步
     if(maxQueueSize > 0) {
         isAsync_ = true;
         if(!deque_) {
-            unique_ptr<BlockDeque<std::string>> newDeque(new BlockDeque<std::string>);
-            deque_ = move(newDeque);
+            std::unique_ptr<BlockDeque<std::string>> newDeque(new BlockDeque<std::string>);
+            // deque_ = newDeque;
+            deque_ = std::move(newDeque);  // 拷贝构造函数
             
             std::unique_ptr<std::thread> NewThread(new thread(FlushLogThread));
-            writeThread_ = move(NewThread);
+            writeThread_ = std::move(NewThread);
         }
     } else {
         isAsync_ = false;
@@ -65,9 +68,10 @@ void Log::Init(int level = 1, const char* path,
     path_ = path;
     suffix_ = suffix;
     char fileName[LOG_NAME_LEN] = {0};
-    snprintf(fileName, LOG_NAME_LEN - 1, "%s/%04d_%02d_%02d%s", 
+    snprintf(fileName, LOG_NAME_LEN - 1, "%s/%04d_%02d_%02d%s",
             path_, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, suffix_);
     toDay_ = t.tm_mday;
+
 
     {
         lock_guard<mutex> locker(mtx_);
@@ -92,12 +96,12 @@ void Log::write(int level, const char* format, ...) {
     time_t tSec = now.tv_sec;
     struct tm *sysTime = localtime(&tSec);
     struct tm t = *sysTime;
-    va_list vaList;
+    va_list vaList;                         // 处理可变参数
 
     /* 日志日期 日志行数 */
     if (toDay_ != t.tm_mday || (lineCount_ && (lineCount_  %  MAX_LINES == 0)))
     {
-        unique_lock<mutex> locker(mtx_);
+        unique_lock<mutex> locker(mtx_);   // 使用unique_lock在于需要在文件切换或创建文件之前解锁
         locker.unlock();
         
         char newFile[LOG_NAME_LEN];
@@ -125,6 +129,7 @@ void Log::write(int level, const char* format, ...) {
     {
         unique_lock<mutex> locker(mtx_);
         lineCount_++;
+        // 将格式化字符串输出到缓冲区
         int n = snprintf(buff_.BeginWrite(), 128, "%d-%02d-%02d %02d:%02d:%02d.%06ld ",
                     t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
                     t.tm_hour, t.tm_min, t.tm_sec, now.tv_usec);
@@ -133,6 +138,7 @@ void Log::write(int level, const char* format, ...) {
         AppendLogLevelTitle_(level);
 
         va_start(vaList, format);
+        // 用于格式化输出可变参数，返回字缓冲区字符数
         int m = vsnprintf(buff_.BeginWrite(), buff_.WritableBytes(), format, vaList);
         // std::cout << "m: " << m << "\n";
         va_end(vaList);
@@ -140,6 +146,7 @@ void Log::write(int level, const char* format, ...) {
         buff_.HasWritten(m);
         buff_.Append("\n\0", 2);
 
+        // 判断将日志信息推入异步队列，还是直接写入
         if(isAsync_ && deque_ && !deque_->full()) {
             std::string str = buff_.RetrieveAllToStr();
             // std::cout << str << "\n";
@@ -147,8 +154,8 @@ void Log::write(int level, const char* format, ...) {
         } else {
             fputs(buff_.Peek(), fp_);
             // fflush(fp_);
+            buff_.RetrieveAll();
         }
-        buff_.RetrieveAll();
     }
 
     // std::cout << "write finish\n";
@@ -156,21 +163,21 @@ void Log::write(int level, const char* format, ...) {
 
 void Log::AppendLogLevelTitle_(int level) {
     switch (level) {
-    case 0:
-        buff_.Append("[debug]: ");
-        break;
-    case 1:
-        buff_.Append("[info]: ");
-        break;
-    case 2:
-        buff_.Append("[warn]: ");
-        break;
-    case 3:
-        buff_.Append("[error]: ");
-        break;
-    default:
-        buff_.Append("[info]: ");
-        break;
+        case 0:
+            buff_.Append("[debug]: ");
+            break;
+        case 1:
+            buff_.Append("[info]: ");
+            break;
+        case 2:
+            buff_.Append("[warn]: ");
+            break;
+        case 3:
+            buff_.Append("[error]: ");
+            break;
+        default:
+            buff_.Append("[info]: ");
+            break;
     }
 }
 
