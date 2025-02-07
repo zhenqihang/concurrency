@@ -8,6 +8,11 @@
 #include <atomic>
 #include <assert.h>
 
+/*
+    提供一个高效可扩展的缓冲区，用于在网络编程或其他需要频繁读写的场景中存储
+    和管理数据。
+*/
+
 class Buffer {
 
     // 返回缓冲区的起始位置
